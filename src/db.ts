@@ -2,9 +2,6 @@ import { createConnection } from "typeorm";
 import { Users } from "./Entities/Users";
 import { DB_HOST, DB_USERNAME, DB_PASSWORD, DB_PORT, DB_NAME } from "./config";
 
-console.log('objecasdsat')
-console.log(DB_PORT, DB_NAME, DB_PASSWORD);
-
 export const connectDB = async () => {
   await createConnection({
     type: "mysql",
@@ -12,10 +9,10 @@ export const connectDB = async () => {
     username: DB_USERNAME,
     password: DB_PASSWORD,
     host: DB_HOST,
-    port: Number(DB_PORT)|| 3306,
+    port: Number(DB_PORT) || 3306,
     // logging: true,
     synchronize: true,
     entities: [Users],
-    ssl: true
+    ssl: true,
   });
 };
