@@ -16,5 +16,6 @@ export const connectDB = async () => {
     // logging: true,
     synchronize: true,
     entities: [Users],
+    ssl: true
   });
 };
