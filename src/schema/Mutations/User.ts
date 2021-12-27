@@ -1,5 +1,6 @@
 import {
   GraphQLBoolean,
+  GraphQLID,
   GraphQLInputObjectType,
   GraphQLList,
   GraphQLObjectType,
@@ -7,7 +8,8 @@ import {
   graphqlSync,
 } from "graphql";
 import { Users } from "../../Entities/Users";
-import { hashPassword } from "../../libs/bcrypt";
+import { hashPassword, comparePassword } from "../../libs/bcrypt";
+import { MessageType } from "../TypeDefs/Message";
 import { UserType } from "../TypeDefs/User";
 
 export const CREATE_USER = {
@@ -37,7 +39,7 @@ export const CREATE_USER = {
 export const DELETE_USER = {
   type: GraphQLBoolean,
   args: {
-    id: { type: GraphQLString },
+    id: { type: GraphQLID },
   },
   async resolve(_: any, { id }: any) {
     const result = await Users.delete(id);
@@ -47,31 +49,43 @@ export const DELETE_USER = {
 };
 
 export const UPDATE_USER = {
-  type: UserType,
+  type: MessageType,
   args: {
-    id: { type: GraphQLString },
+    id: { type: GraphQLID },
     input: {
       type: new GraphQLInputObjectType({
         name: "UserInput",
         fields: () => ({
           name: { type: GraphQLString },
           username: { type: GraphQLString },
-          password: { type: GraphQLString },
+          oldPassword: { type: GraphQLString },
+          newPassword: { type: GraphQLString },
         }),
       }),
     },
   },
   async resolve(_: any, { id, input }: any) {
-    const newPassword = await hashPassword(input.password);
+    const userFound = await Users.findOne(id);
+
+    const isMatch = await comparePassword(
+      userFound?.password as string,
+      input.oldPassword
+    );
+
+    if (!isMatch) throw new Error("Passwords does not match");
+
+    const newPassword = await hashPassword(input.newPassword);
+
     const response = await Users.update(
       { id },
-      { ...input, password: newPassword }
+      { username: input.username, name: input.username, password: newPassword }
     );
 
     if (response.affected === 0) return;
 
-    const user = await Users.findOne(id);
-
-    return user;
+    return {
+      success: true,
+      message: "Update User successfully",
+    };
   },
 };

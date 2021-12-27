@@ -1,5 +1,6 @@
 import {
   GraphQLBoolean,
+  GraphQLID,
   GraphQLList,
   GraphQLObjectType,
   GraphQLString,
@@ -17,7 +18,7 @@ export const GET_ALL_USERS = {
 export const GET_USER = {
   type: UserType,
   args: {
-    id: { type: GraphQLString },
+    id: { type: GraphQLID },
   },
   async resolve(_: any, args: any) {
     const result = await Users.findOne(args.id);
