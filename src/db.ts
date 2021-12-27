@@ -9,7 +9,7 @@ export const connectDB = async () => {
     username: DB_USERNAME,
     password: DB_PASSWORD,
     host: DB_HOST,
-    port: Number(DB_PORT) || 3306,
+    port: Number(DB_PORT),
     // logging: true,
     synchronize: true,
     entities: [Users],
