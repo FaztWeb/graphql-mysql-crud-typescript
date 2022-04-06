@@ -3,6 +3,7 @@ import {
   GraphQLID,
   GraphQLInputObjectType,
   GraphQLList,
+  GraphQLNonNull,
   GraphQLObjectType,
   GraphQLString,
   graphqlSync,
@@ -15,16 +16,14 @@ import { UserType } from "../TypeDefs/User";
 export const CREATE_USER = {
   type: UserType,
   args: {
-    name: { type: GraphQLString },
-    username: { type: GraphQLString },
-    password: { type: GraphQLString },
+    name: { type: new GraphQLNonNull(GraphQLString) },
+    username: { type: new GraphQLNonNull(GraphQLString) },
+    password: { type: new GraphQLNonNull(GraphQLString) },
   },
   async resolve(parent: any, args: any) {
     const { name, username, password } = args;
 
     const encryptPassword = await hashPassword(password);
-
-    console.log(encryptPassword);
 
     const result = await Users.insert({
       name,
@@ -39,10 +38,10 @@ export const CREATE_USER = {
 export const DELETE_USER = {
   type: GraphQLBoolean,
   args: {
-    id: { type: GraphQLID },
+    id: { type: new GraphQLNonNull(GraphQLID) },
   },
   async resolve(_: any, { id }: any) {
-    const result = await Users.delete(id);
+    const result = await Users.delete({ id });
     if (result.affected! > 0) return true;
     return false;
   },
@@ -65,23 +64,27 @@ export const UPDATE_USER = {
     },
   },
   async resolve(_: any, { id, input }: any) {
-    const userFound = await Users.findOne(id);
+    const userFound = await Users.findOneBy({ id });
+    if (!userFound) throw new Error("User not found");
 
+    // Compare old password with the new password
     const isMatch = await comparePassword(
       userFound?.password as string,
       input.oldPassword
     );
-
     if (!isMatch) throw new Error("Passwords does not match");
 
+    // Hasing the password and deleteting oldPassword and new Password
     const newPassword = await hashPassword(input.newPassword);
+    delete input.oldPassword;
+    delete input.newPassword;
 
-    const response = await Users.update(
-      { id },
-      { username: input.username, name: input.username, password: newPassword }
-    );
+    // Adding passsword to the input for update
+    input.password = newPassword;
 
-    if (response.affected === 0) return;
+    const response = await Users.update({ id }, input);
+
+    if (response.affected === 0) return { message: "User not found" };
 
     return {
       success: true,

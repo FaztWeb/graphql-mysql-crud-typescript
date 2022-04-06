@@ -1,12 +1,13 @@
 import app from "./app";
-import { connectDB } from "./db";
-import {PORT} from './config'
+import { AppDataSource } from "./db";
+import { PORT } from "./config";
 
 const main = async () => {
   try {
-    await connectDB();
+    await AppDataSource.initialize();
+    console.log('Database initialized')
     app.listen(PORT);
-    console.log("Server on port", PORT);
+    console.log(`Server on http://localhost:${PORT}/graphql`);
   } catch (error) {
     console.error(error);
   }
